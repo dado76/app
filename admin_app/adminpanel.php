@@ -1,3 +1,6 @@
+
+
+
 <?php
 /**
  * File Manager Script
@@ -11,8 +14,8 @@ $use_auth = true;
 
 // Users: array('Username' => 'Password', 'Username2' => 'Password2', ...), Password has to encripted into MD5
 $auth_users = array(
-    'admin' => '1ad9992bab227315f2b21f8990999328', //admin
-    'user' => '827ccb0eea8a706c4c34a16891f84e7b', //12345
+    'admin' => '827ccb0eea8a706c4c34a16891f84e7b', //admin
+    'root' => '827ccb0eea8a706c4c34a16891f84e7b', //12345
 );
 
 // Readonly users (usernames array)
@@ -39,11 +42,11 @@ $send_mail = false;
 $toMailId = ""; //yourmailid@mail.com
 
 // Default timezone for date() and time() - http://php.net/manual/en/timezones.php
-$default_timezone = 'Etc/GMT+8'; // UTC
+$default_timezone = 'Europe/Paris'; // UTC
 
 // Root url for links in file manager.Relative to $http_host. Variants: '', 'path/to/subfolder'
 // Will not working if $root_path will be outside of server document root
-$root_url = './img/pdf';
+$root_url = './admin_app/public';
 
 // Root path for file manager
 $root_path = $_SERVER['DOCUMENT_ROOT'] . '/' . $root_url;
@@ -81,7 +84,7 @@ if (defined('FM_EMBED')) {
     }
 
     session_cache_limiter('');
-    session_name('filemanager');
+    session_name('adminpanel');
     session_start();
 }
 
@@ -131,11 +134,11 @@ if ($use_auth) {
         sleep(1);
         if (isset($auth_users[$_POST['fm_usr']]) && md5($_POST['fm_pwd']) === $auth_users[$_POST['fm_usr']]) {
             $_SESSION['logged'] = $_POST['fm_usr'];
-            fm_set_msg('You are logged in');
+            fm_set_msg('Connexion réussi');
             fm_redirect(FM_SELF_URL . '?p=');
         } else {
             unset($_SESSION['logged']);
-            fm_set_msg('Wrong password', 'error');
+            fm_set_msg('Mauvais mot de passe', 'error');
             fm_redirect(FM_SELF_URL);
         }
     } else {
@@ -144,16 +147,20 @@ if ($use_auth) {
         fm_show_header();
         fm_show_message();
         ?>
+        <h1 style="text-align: center;"> ADMIN PANEL </h1>
         <div class="path login-form">
             <form action="" method="post">
-                <label for="fm_usr"><?php echo fm_t('Username', $lang) ?></label><input type="text" id="fm_usr" name="fm_usr" value="" placeholder="<?php echo fm_t('Username', $lang) ?>" required><br>
-                <label for="fm_pwd"><?php echo fm_t('Password', $lang) ?></label><input type="password" id="fm_pwd" name="fm_pwd" value="" placeholder="<?php echo fm_t('Password', $lang) ?>" required><br>
+                <label for="fm_usr"><?php echo fm_t('Nom d utilisateur', $lang) ?></label>   <br> <br><input type="text" id="fm_usr" name="fm_usr" value="" placeholder="<?php echo fm_t('Nom', $lang) ?>" required><br>
+                <br>
+                <label for="fm_pwd"><?php echo fm_t('Mot de passe', $lang) ?></label>   <br> <br><input type="password" id="fm_pwd" name="fm_pwd" value="" placeholder="<?php echo fm_t('Mot de passe', $lang) ?>" required><br>
                 <select name="lang" title="Language" class="hidden">
                     <?php foreach ($languages as $l): ?>
                         <option value="<?php echo $l ?>"<?php echo $l == $lang ? ' selected' : '' ?>><?php echo $l ?></option>
                     <?php endforeach; ?>
                 </select>
-                <input type="submit" value="<?php echo fm_t('Login', $lang) ?>">
+                <br>
+                <br>
+                <input type="submit"  class="btn btn-primary" value="<?php echo fm_t('Connexion', $lang) ?>">
             </form>
         </div>
         <?php
@@ -459,7 +466,7 @@ if (isset($_POST['upl']) && !FM_READONLY) {
     }
 
     if ($errors == 0 && $uploads > 0) {
-        fm_set_msg(sprintf('All files uploaded to <b>%s</b>', $path));
+        fm_set_msg(sprintf(' Tous les fichiers ont étés transférer vers <b>%s</b>', $path));
     } elseif ($errors == 0 && $uploads == 0) {
         fm_set_msg('Nothing uploaded', 'alert');
     } else {
@@ -488,7 +495,7 @@ if (isset($_POST['group'], $_POST['delete']) && !FM_READONLY) {
             }
         }
         if ($errors == 0) {
-            fm_set_msg('Selected files and folder deleted');
+            fm_set_msg('Dossier et fichier selectionner supprimer');
         } else {
             fm_set_msg('Error while deleting items', 'error');
         }
@@ -529,10 +536,10 @@ if (isset($_POST['group'], $_POST['zip']) && !FM_READONLY) {
         if ($res) {
             fm_set_msg(sprintf('Archive <b>%s</b> created', $zipname));
         } else {
-            fm_set_msg('Archive not created', 'error');
+            fm_set_msg('Archive non crée', 'error');
         }
     } else {
-        fm_set_msg('Nothing selected', 'alert');
+        fm_set_msg('Aucune selection', 'alert');
     }
 
     fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
@@ -570,13 +577,13 @@ if (isset($_GET['unzip']) && !FM_READONLY) {
         $res = $zipper->unzip($zip_path, $path);
 
         if ($res) {
-            fm_set_msg('Archive unpacked');
+            fm_set_msg('Archive décompresser');
         } else {
-            fm_set_msg('Archive not unpacked', 'error');
+            fm_set_msg('Archive non décompresser', 'error');
         }
 
     } else {
-        fm_set_msg('File not found', 'error');
+        fm_set_msg('Fichier introuvable', 'error');
     }
     fm_redirect(FM_SELF_URL . '?p=' . urlencode(FM_PATH));
 }
@@ -683,8 +690,8 @@ if (isset($_GET['upload']) && !FM_READONLY) {
     fm_show_nav_path(FM_PATH); // current path
     ?>
     <div class="path">
-        <p><b><?php echo fm_t('Uploading files') ?></b></p>
-        <p class="break-word"><?php echo fm_t('Destination folder:') ?> <?php echo fm_convert_win(FM_ROOT_PATH . '/' . FM_PATH) ?></p>
+        <p><b><?php echo fm_t('Upload de fichier') ?></b></p>
+        <p class="break-word"><?php echo fm_t('Destination du fichier:') ?> <?php echo fm_convert_win(FM_ROOT_PATH . '/' . FM_PATH) ?></p>
         <form action="" method="post" enctype="multipart/form-data">
             <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
             <input type="hidden" name="upl" value="1">
@@ -695,8 +702,8 @@ if (isset($_GET['upload']) && !FM_READONLY) {
             <input type="file" name="upload[]"><br>
             <br>
             <p>
-                <button type="submit" class="btn"><i class="fa fa-check-circle"></i> <?php echo fm_t('Upload', $lang) ?></button> &nbsp;
-                <b><a href="?p=<?php echo urlencode(FM_PATH) ?>"><i class="fa fa-times-circle"></i> <?php echo fm_t('Cancel', $lang) ?></a></b>
+                <button type="submit" class="btn btn-primary"><i class="fa fa-check-circle"></i> <?php echo fm_t('Envoyer', $lang) ?></button> &nbsp;
+                <b><a class="btn btn-primary" href="?p=<?php echo urlencode(FM_PATH) ?>"><i class="fa fa-times-circle"></i> <?php echo fm_t('Annuler', $lang) ?></a></b>
             </p>
         </form>
     </div>
@@ -880,22 +887,22 @@ if (isset($_GET['view'])) {
             ?>
         </p>
         <p>
-            <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($file) ?>"><i class="fa fa-cloud-download"></i> <?php echo fm_t('Download', $lang) ?></a></b> &nbsp;
-            <b><a href="<?php echo $file_url ?>" target="_blank"><i class="fa fa-external-link-square"></i> <?php echo fm_t('Open', $lang) ?></a></b> &nbsp;
+            <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($file) ?>"><i class="fa fa-cloud-download"></i> <?php echo fm_t('Télécharger', $lang) ?></a></b> &nbsp;
+            <b><a href="<?php echo $file_url ?>" target="_blank"><i class="fa fa-external-link-square"></i> <?php echo fm_t('Ouvrir', $lang) ?></a></b> &nbsp;
             <?php
             // ZIP actions
             if (!FM_READONLY && $is_zip && $filenames !== false) {
                 $zip_name = pathinfo($file_path, PATHINFO_FILENAME);
                 ?>
-                <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;unzip=<?php echo urlencode($file) ?>"><i class="fa fa-check-circle"></i> <?php echo fm_t('UnZip', $lang) ?></a></b> &nbsp;
-                <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;unzip=<?php echo urlencode($file) ?>&amp;tofolder=1" title="<?php echo fm_t('UnZip to', $lang) ?> <?php echo fm_enc($zip_name) ?>"><i class="fa fa-check-circle"></i>
-                        <?php echo fm_t('UnZip to folder', $lang) ?></a></b> &nbsp;
+                <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;unzip=<?php echo urlencode($file) ?>"><i class="fa fa-check-circle"></i> <?php echo fm_t('Décompresser', $lang) ?></a></b> &nbsp;
+                <b><a href="?p=<?php echo urlencode(FM_PATH) ?>&amp;unzip=<?php echo urlencode($file) ?>&amp;tofolder=1" title="<?php echo fm_t('Décompresser vers', $lang) ?> <?php echo fm_enc($zip_name) ?>"><i class="fa fa-check-circle"></i>
+                        <?php echo fm_t('Décompresser vers', $lang) ?></a></b> &nbsp;
                 <?php
             }
             if($is_text && !FM_READONLY) {
                 ?>
-                <b><a href="?p=<?php echo urlencode(trim(FM_PATH)) ?>&amp;edit=<?php echo urlencode($file) ?>" class="edit-file"><i class="fa fa-pencil-square"></i> <?php echo fm_t('Edit', $lang) ?></a></b> &nbsp;
-                <b><a href="?p=<?php echo urlencode(trim(FM_PATH)) ?>&amp;edit=<?php echo urlencode($file) ?>&env=ace" class="edit-file"><i class="fa fa-pencil-square"></i> <?php echo fm_t('Advanced Edit', $lang) ?></a></b> &nbsp;
+                <b><a href="?p=<?php echo urlencode(trim(FM_PATH)) ?>&amp;edit=<?php echo urlencode($file) ?>" class="edit-file"><i class="fa fa-pencil-square"></i> <?php echo fm_t('Editer', $lang) ?></a></b> &nbsp;
+                <b><a href="?p=<?php echo urlencode(trim(FM_PATH)) ?>&amp;edit=<?php echo urlencode($file) ?>&env=ace" class="edit-file"><i class="fa fa-pencil-square"></i> <?php echo fm_t('Edition avancée', $lang) ?></a></b> &nbsp;
             <?php }
             if($send_mail && !FM_READONLY) {
                 ?>
@@ -1062,13 +1069,16 @@ if (isset($_GET['chmod']) && !FM_READONLY && !FM_IS_WIN) {
             <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
             <input type="hidden" name="chmod" value="<?php echo fm_enc($file) ?>">
 
-            <table class="compact-table">
+            <table class="table">
+                <thead class="thead-dark">
                 <tr>
                     <td></td>
                     <td><b><?php echo fm_t('Owner', $lang) ?></b></td>
                     <td><b><?php echo fm_t('Group', $lang) ?></b></td>
                     <td><b><?php echo fm_t('Other', $lang) ?></b></td>
                 </tr>
+                </thead>
+                <tbody>
                 <tr>
                     <td style="text-align: right"><b><?php echo fm_t('Read', $lang) ?></b></td>
                     <td><label><input type="checkbox" name="ur" value="1"<?php echo ($mode & 00400) ? ' checked' : '' ?>></label></td>
@@ -1087,6 +1097,7 @@ if (isset($_GET['chmod']) && !FM_READONLY && !FM_IS_WIN) {
                     <td><label><input type="checkbox" name="gx" value="1"<?php echo ($mode & 00010) ? ' checked' : '' ?>></label></td>
                     <td><label><input type="checkbox" name="ox" value="1"<?php echo ($mode & 00001) ? ' checked' : '' ?>></label></td>
                 </tr>
+                </tbody>
             </table>
 
             <p>
@@ -1117,9 +1128,9 @@ $all_files_size = 0;
         <input type="hidden" name="p" value="<?php echo fm_enc(FM_PATH) ?>">
         <input type="hidden" name="group" value="1">
         <table class="table"><thead><tr>
-                <?php if (!FM_READONLY): ?><th style="width:3%"><label><input type="checkbox" title="<?php echo fm_t('Invert selection', $lang) ?>" onclick="checkbox_toggle()"></label></th><?php endif; ?>
-                <th><?php echo fm_t('Name', $lang) ?></th><th style="width:10%"><?php echo fm_t('Size', $lang) ?></th>
-                <th style="width:12%"><?php echo fm_t('Modified', $lang) ?></th>
+                <?php if (!FM_READONLY): ?><th style="width:3%"><label><input type="checkbox" title="<?php echo fm_t('Inverser la selection', $lang) ?>" onclick="checkbox_toggle()"></label></th><?php endif; ?>
+                <th><?php echo fm_t('Nom', $lang) ?></th><th style="width:10%"><?php echo fm_t('Taille', $lang) ?></th>
+                <th style="width:12%"><?php echo fm_t('Date modification', $lang) ?></th>
                 <?php if (!FM_IS_WIN): ?><th style="width:6%"><?php echo fm_t('Perms', $lang) ?></th><th style="width:10%"><?php echo fm_t('Owner', $lang) ?></th><?php endif; ?>
                 <th style="width:<?php if (!FM_READONLY): ?>13<?php else: ?>6.5<?php endif; ?>%"><?php echo fm_t('Actions', $lang) ?></th></tr></thead>
             <?php
@@ -1145,17 +1156,17 @@ $all_files_size = 0;
                 <tr>
                     <?php if (!FM_READONLY): ?><td><label><input type="checkbox" name="file[]" value="<?php echo fm_enc($f) ?>"></label></td><?php endif; ?>
                     <td><div class="filename"><a href="?p=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="<?php echo $img ?>"></i> <?php echo fm_convert_win($f) ?></a><?php echo ($is_link ? ' &rarr; <i>' . readlink($path . '/' . $f) . '</i>' : '') ?></div></td>
-                    <td><?php echo fm_t('Folder', $lang) ?></td><td><?php echo $modif ?></td>
+                    <td><?php echo fm_t('Dossier', $lang) ?></td><td><?php echo $modif ?></td>
                     <?php if (!FM_IS_WIN): ?>
-                        <td><?php if (!FM_READONLY): ?><a title="<?php echo fm_t('Change Permissions', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;chmod=<?php echo urlencode($f) ?>"><?php echo $perms ?></a><?php else: ?><?php echo $perms ?><?php endif; ?></td>
+                        <td><?php if (!FM_READONLY): ?><a title="<?php echo fm_t('Changer les permissions', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;chmod=<?php echo urlencode($f) ?>"><?php echo $perms ?></a><?php else: ?><?php echo $perms ?><?php endif; ?></td>
                         <td><?php echo $owner['name'] . ':' . $group['name'] ?></td>
                     <?php endif; ?>
                     <td class="inline-actions"><?php if (!FM_READONLY): ?>
-                            <a title="<?php echo fm_t('Delete', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;del=<?php echo urlencode($f) ?>" onclick="return confirm('<?php echo fm_t('Delete folder?') ?>');"><i class="fa fa-trash-o" style="background:#FF4136" aria-hidden="true"></i></a>
-                            <a title="<?php echo fm_t('Rename', $lang) ?>" href="#" onclick="rename('<?php echo fm_enc(FM_PATH) ?>', '<?php echo fm_enc($f) ?>');return false;"><i class="fa fa-pencil-square-o" style="background:#FF851B" aria-hidden="true"></i></a>
-                            <a title="<?php echo fm_t('Copy to...') ?>" href="?p=&amp;copy=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="fa fa-files-o" aria-hidden="true"></i></a>
+                            <a title="<?php echo fm_t('Supprimer', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;del=<?php echo urlencode($f) ?>" onclick="return confirm('<?php echo fm_t('Delete folder?') ?>');"><i class="fa fa-trash-o" style="background:#FF4136" aria-hidden="true"></i></a>
+                            <a title="<?php echo fm_t('Renommer', $lang) ?>" href="#" onclick="rename('<?php echo fm_enc(FM_PATH) ?>', '<?php echo fm_enc($f) ?>');return false;"><i class="fa fa-pencil-square-o" style="background:#FF851B" aria-hidden="true"></i></a>
+                            <a title="<?php echo fm_t('Copier vers...') ?>" href="?p=&amp;copy=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="fa fa-files-o" aria-hidden="true"></i></a>
                         <?php endif; ?>
-                        <a title="<?php echo fm_t('Direct link', $lang) ?>" href="<?php echo FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f . '/' ?>" target="_blank"><i class="fa fa-link" style="background:#001f3f" aria-hidden="true"></i></a>
+                        <a title="<?php echo fm_t('Lien direct', $lang) ?>" href="<?php echo FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f . '/' ?>" target="_blank"><i class="fa fa-link" style="background:#001f3f" aria-hidden="true"></i></a>
                     </td></tr>
                 <?php
                 flush();
@@ -1189,12 +1200,12 @@ $all_files_size = 0;
                     <?php endif; ?>
                     <td class="inline-actions">
                         <?php if (!FM_READONLY): ?>
-                            <a title="<?php echo fm_t('Delete', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;del=<?php echo urlencode($f) ?>" onclick="return confirm('<?php echo fm_t('Delete file?') ?>');"><i class="fa fa-trash-o" style="background:#FF4136"></i></a>
-                            <a title="<?php echo fm_t('Rename', $lang) ?>" href="#" onclick="rename('<?php echo fm_enc(FM_PATH) ?>', '<?php echo fm_enc($f) ?>');return false;"><i class="fa fa-pencil-square-o" style="background:#FF851B"></i></a>
-                            <a title="<?php echo fm_t('Copy to...') ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;copy=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="fa fa-files-o"></i></a>
+                            <a title="<?php echo fm_t('Supprimer', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;del=<?php echo urlencode($f) ?>" onclick="return confirm('<?php echo fm_t('Supprimer fichier ?') ?>');"><i class="fa fa-trash-o" style="background:#FF4136;"></i></a>
+                            <a title="<?php echo fm_t('Renommer', $lang) ?>" href="#" onclick="rename('<?php echo fm_enc(FM_PATH) ?>', '<?php echo fm_enc($f) ?>');return false;"><i class="fa fa-pencil-square-o" style="background:#FF851B "></i></a>
+                            <a title="<?php echo fm_t('Copier vers...') ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;copy=<?php echo urlencode(trim(FM_PATH . '/' . $f, '/')) ?>"><i class="fa fa-files-o"></i></a>
                         <?php endif; ?>
-                        <a title="<?php echo fm_t('Direct link', $lang) ?>" href="<?php echo FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f ?>" target="_blank"><i class="fa fa-link" style="background:#001f3f"></i></a>
-                        <a title="<?php echo fm_t('Download', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($f) ?>"><i class="fa fa-download" style="background:#2ECC40"></i></a>
+                        <a title="<?php echo fm_t('Lien direct', $lang) ?>" href="<?php echo FM_ROOT_URL . (FM_PATH != '' ? '/' . FM_PATH : '') . '/' . $f ?>" target="_blank"><i class="fa fa-link" style="background:#001f3f"></i></a>
+                        <a title="<?php echo fm_t('Télécharger', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;dl=<?php echo urlencode($f) ?>"><i class="fa fa-download" style="background:#2ECC40"></i></a>
                     </td></tr>
                 <?php
                 flush();
@@ -1202,29 +1213,29 @@ $all_files_size = 0;
 
             if (empty($folders) && empty($files)) {
                 ?>
-                <tr><?php if (!FM_READONLY): ?><td></td><?php endif; ?><td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><em><?php echo fm_t('Folder is empty', $lang) ?></em></td></tr>
+                <tr><?php if (!FM_READONLY): ?><td></td><?php endif; ?><td colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>"><em><?php echo fm_t('Le dossier est vide', $lang) ?></em></td></tr>
                 <?php
             } else {
                 ?>
                 <tr><?php if (!FM_READONLY): ?><td class="gray"></td><?php endif; ?><td class="gray" colspan="<?php echo !FM_IS_WIN ? '6' : '4' ?>">
-                        <?php echo fm_t('Full size:', $lang) ?> <span title="<?php printf(fm_t('%s bytes'), $all_files_size) ?>"><?php echo fm_get_filesize($all_files_size) ?></span>,
-                        <?php echo fm_t('files:', $lang) ?> <?php echo $num_files ?>,
-                        <?php echo fm_t('folders:', $lang) ?> <?php echo $num_folders ?>
+                        <?php echo fm_t('Taille total :', $lang) ?> <span title="<?php printf(fm_t('%s bytes'), $all_files_size) ?>"><?php echo fm_get_filesize($all_files_size) ?></span>,
+                        <?php echo fm_t('Fichier:', $lang) ?> <?php echo $num_files ?>,
+                        <?php echo fm_t('Dossier:', $lang) ?> <?php echo $num_folders ?>
                     </td></tr>
                 <?php
             }
             ?>
         </table>
         <?php if (!FM_READONLY): ?>
-            <p class="path footer-links"><a href="#/select-all" class="group-btn" onclick="select_all();return false;"><i class="fa fa-check-square"></i> <?php echo fm_t('Select all', $lang) ?></a> &nbsp;
-                <a href="#/unselect-all" class="group-btn" onclick="unselect_all();return false;"><i class="fa fa-window-close"></i> <?php echo fm_t('Unselect all', $lang) ?></a> &nbsp;
-                <a href="#/invert-all" class="group-btn" onclick="invert_all();return false;"><i class="fa fa-th-list"></i> <?php echo fm_t('Invert selection', $lang) ?></a> &nbsp;
-                <input type="submit" class="hidden" name="delete" id="a-delete" value="<?php echo fm_t('Delete', $lang) ?>" onclick="return confirm('<?php echo fm_t('Delete selected files and folders?') ?>')">
-                <a href="javascript:document.getElementById('a-delete').click();" class="group-btn"><i class="fa fa-trash"></i> <?php echo fm_t('Delete', $lang) ?> </a> &nbsp;
-                <input type="submit" class="hidden" name="zip" id="a-zip" value="<?php echo fm_t('Zip', $lang) ?>" onclick="return confirm('<?php echo fm_t('Create archive?') ?>')">
-                <a href="javascript:document.getElementById('a-zip').click();" class="group-btn"><i class="fa fa-file-archive-o"></i> <?php echo fm_t('Zip', $lang) ?> </a> &nbsp;
-                <input type="submit" class="hidden" name="copy" id="a-copy" value="<?php echo fm_t('Copy', $lang) ?>">
-                <a href="javascript:document.getElementById('a-copy').click();" class="group-btn"><i class="fa fa-files-o"></i> <?php echo fm_t('Copy', $lang) ?> </a>
+            <p class="path footer-links"><a href="#/select-all" class="btn btn-primary btn-sm" onclick="select_all();return false;"><i class="fa fa-check-square"></i> <?php echo fm_t('Selectionner tous', $lang) ?></a> &nbsp;
+                <a href="#/unselect-all" class="btn btn-primary btn-sm" onclick="unselect_all();return false;"><i class="fa fa-window-close"></i> <?php echo fm_t('Déselectionner tous ', $lang) ?></a> &nbsp;
+                <a href="#/invert-all" class="btn btn-primary btn-sm"  onclick="invert_all();return false;"><i class="fa fa-th-list"></i> <?php echo fm_t('Inverser selection', $lang) ?></a> &nbsp;
+                <input type="submit" class="hidden" name="delete" id="a-delete" value="<?php echo fm_t('Delete', $lang) ?>" onclick="return confirm('<?php echo fm_t('Supprimer fichier et dossiser selectionner?') ?>')">
+                <a class="btn btn-primary btn-sm"  href="javascript:document.getElementById('a-delete').click();" class="group-btn"><i class="fa fa-trash"></i> <?php echo fm_t('Delete', $lang) ?> </a> &nbsp;
+                <input type="submit" class="hidden" name="zip" id="a-zip" value="<?php echo fm_t('Zip', $lang) ?>" onclick="return confirm('<?php echo fm_t('Crée un archive?') ?>')">
+                <a  class="btn btn-primary btn-sm"  href="javascript:document.getElementById('a-zip').click();" class="group-btn"><i class="fa fa-file-archive-o"></i> <?php echo fm_t('Zip', $lang) ?> </a> &nbsp;
+                <input type="submit" class="hidden" name="copy" id="a-copy" value="<?php echo fm_t('Copier', $lang) ?>">
+                <a class="btn btn-primary btn-sm"  href="javascript:document.getElementById('a-copy').click();" class="group-btn"><i class="fa fa-files-o"></i> <?php echo fm_t('Copier', $lang) ?> </a>
             </p>
         <?php endif; ?>
     </form>
@@ -1946,11 +1957,11 @@ function fm_show_nav_path($path)
 
         <div class="float-right">
             <?php if (!FM_READONLY): ?>
-                <a title="<?php echo fm_t('Search', $lang) ?>" href="javascript:showSearch('<?php echo urlencode(FM_PATH) ?>')"><i class="fa fa-search"></i></a>
-                <a title="<?php echo fm_t('Upload files', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;upload"><i class="fa fa-cloud-upload" aria-hidden="true"></i></a>
-                <a title="<?php echo fm_t('New folder', $lang) ?>" href="#createNewItem" ><i class="fa fa-plus-square"></i></a>
+                <a title="<?php echo fm_t('Recherche', $lang) ?>" href="javascript:showSearch('<?php echo urlencode(FM_PATH) ?>')">RECHERCHER</a>
+                <a title="<?php echo fm_t('Upload de fichier', $lang) ?>" href="?p=<?php echo urlencode(FM_PATH) ?>&amp;upload">UPLOAD</a>
+                <a title="<?php echo fm_t('Nouveau dossier', $lang) ?>" href="#createNewItem" >NOUVEAU DOSSIER</a>
             <?php endif; ?>
-            <?php if (FM_USE_AUTH): ?><a title="<?php echo fm_t('Logout', $lang) ?>" href="?logout=1"><i class="fa fa-sign-out" aria-hidden="true"></i></a><?php endif; ?>
+            <?php if (FM_USE_AUTH): ?><a title="<?php echo fm_t('Logout', $lang) ?>" href="?logout=1">DECONNEXION</a><?php endif; ?>
         </div>
     </div>
     <?php
@@ -1976,7 +1987,6 @@ function fm_show_header()
 {
     $sprites_ver = '20160315';
     header("Content-Type: text/html; charset=utf-8");
-    header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
     header("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
     header("Pragma: no-cache");
 
@@ -1986,71 +1996,69 @@ function fm_show_header()
     <html>
     <head>
         <meta charset="utf-8">
-        <title>File Manager Script</title>
-        <meta name="Description" CONTENT="Manage files in easy way, lightweight and no headache.">
-        <link rel="icon" href="<?php echo FM_SELF_URL ?>?img=favicon" type="image/png">
+        <title>Admin Web Panel</title>
+
+
         <link rel="shortcut icon" href="<?php echo FM_SELF_URL ?>?img=favicon" type="image/png">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         <?php if (isset($_GET['view']) && FM_USE_HIGHLIGHTJS): ?>
             <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/styles/<?php echo FM_HIGHLIGHTJS_STYLE ?>.min.css">
+            <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
         <?php endif; ?>
         <style>
-            html,body,div,span,p,pre,a,code,em,img,small,strong,ol,ul,li,form,label,table,tr,th,td{margin:0;padding:0;vertical-align:baseline;outline:none;font-size:100%;background:transparent;border:none;text-decoration:none}
             html{overflow-y:scroll}body{padding:0;font:13px/16px Tahoma,Arial,sans-serif;color:#222;background:#fafafa}
-            input,select,textarea,button{font-size:inherit;font-family:inherit}
+           select,textarea,button{font-size:inherit;font-family:inherit}
             a{color:#296ea3;text-decoration:none}a:hover{color:#b00}img{vertical-align:middle;border:none}
             a img{border:none}span{color:#777}small{font-size:11px;color:#999}p{margin-bottom:10px}
             ul{margin-left:2em;margin-bottom:10px}ul{list-style-type:none;margin-left:0}ul li{padding:3px 0}
-            table{border-collapse:collapse;border-spacing:0;margin-bottom:10px;width:100%}
             th,td{padding:4px 7px;text-align:left;vertical-align:top;border:1px solid #ddd;background:#fff;white-space:nowrap}
             th,td.gray{background-color:#eee}td.gray span{color:#222}
             tr:hover td{background-color:#f5f5f5}tr:hover td.gray{background-color:#eee}
-            .table{width:100%;max-width:100%;margin-bottom:1rem;margin-top:4rem;}
-            .table td,.table th{padding:.55rem;vertical-align:top;border-top:1px solid #ddd}
-            .table td label input[type="checkbox"],.table th label input[type="checkbox"]{margin-top:4px;}
-            .table thead th{vertical-align:bottom;border-bottom:2px solid #eceeef}.table tbody+tbody{border-top:2px solid #eceeef}.table .table{background-color:#fff}
+            .table{width:80%;max-width:80%;margin-bottom:1rem;margin-top:4rem;}
             code,pre{display:block;margin-bottom:10px;font:13px/16px Consolas,'Courier New',Courier,monospace;border:1px dashed #ccc;padding:5px;overflow:auto}
             pre.with-hljs{padding:0} .hidden {display:none;}
             pre.with-hljs code{margin:0;border:0;overflow:visible}
-            code.maxheight,pre.maxheight{max-height:512px}input[type="checkbox"]{margin:0;padding:0}
+            .table th {background-color: #0069D9; color: white;}
             .fa.fa-caret-right{font-size:1.2em;margin:0 4px;vertical-align:middle;color:#ececec}.fa.fa-home{font-size:1.2em;vertical-align:bottom;}
             body {margin:0 30px;margin-top: 45px;}
             #wrapper{min-width:400px;margin:0 auto}
             .path{padding:20px;border:1px solid #ddd;background-color:#fff;margin-bottom:10px}
             .right{text-align:right}.center{text-align:center}.float-right{float:right}.float-left{float:left}
-            .message{padding:4px 7px;border:1px solid #ddd;background-color:#fff;margin-bottom:-3rem;margin-top:3rem;}
+            .message{padding:4px 7px;border:1px solid #ddd;background-color:#fff; margin-top: 100px;}
             .message.ok{border-color:green;color:green}
             .message.error{border-color:red;color:red}
             .message.alert{border-color:orange;color:orange}
-            .btn{border:0;background:none;padding:0;margin:0;font-weight:bold;color:#296ea3;cursor:pointer}.btn:hover{color:#b00}
+
             .preview-img{max-width:100%;background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAKklEQVR42mL5//8/Azbw+PFjrOJMDCSCUQ3EABZc4S0rKzsaSvTTABBgAMyfCMsY4B9iAAAAAElFTkSuQmCC") repeat 0 0}.inline-actions>a>i{font-size:1em;margin-left:5px;background:#3785c1;color:#fff;padding:3px;border-radius:2px;}
             .preview-video{position:relative;max-width:100%;height:0;padding-bottom:62.5%;margin-bottom:10px}.preview-video video{position:absolute;width:100%;height:100%;left:0;top:0;background:#000}
             .compact-table{border:0;width:auto}.compact-table td,.compact-table th{width:100px;border:0;text-align:center}.compact-table tr:hover td{background-color:#fff}
-            .filename{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
             .break-word{word-wrap:break-word;margin-left:30px;}.break-word.float-left a{color:#fff}.break-word+.float-right{padding-right:30px;position:relative;}.break-word+.float-right>a{color:#fff;font-size:1.2em;margin-right:4px;}
             .modal{display:none;position:fixed;z-index:1;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:#000;background-color:rgba(0,0,0,.4)}
-            .modal-content{background-color:#fefefe;margin:auto;padding:20px;border:1px solid #888;width:80%}
+            .modal-content{background-color:#fefefe;margin:auto;padding:1000px;border:1px solid #888;width:80%}
             .close{color:#aaa;float:right;font-size:28px;font-weight:700}.close:focus,.close:hover{color:#000;text-decoration:none;cursor:pointer}
             #editor {position:absolute;top:50px;right:30px;bottom:5px;left:30px;}
-            .edit-file-actions {position: absolute;top:0;right:30px;background:#585858;margin-top:5px;}
+            .edit-file-actions {position: absolute;top:0;right:30px;background:red;margin-top:5px;}
             .edit-file-actions>button,.edit-file-actions>a{background:#f8f8fb;padding:5px 15px;border:0;cursor:pointer;color:#296ea3}
-            .group-btn{background:#fff;padding:2px 6px;border:1px solid;cursor:pointer;color:#296ea3;}
-            .main-nav{position:fixed;top:0;left:0;padding:10px 30px;padding-left:1px;width:100%;background:#585858;color:#fff;border:0;}
+
+            .main-nav{position:fixed;top:0;left:0;padding:10px 30px;padding-left:1px;width:100%;background:#0069D9;color:#fff;border:0; height: 50px;}
             .login-form {width:320px;text-align:center;margin:0 auto;}
-            .login-form label,.path.login-form input {padding:5px;margin:10px}.footer-links{background:transparent;border:0}
-            input[type=search]{height:30px;margin-top:20px;width:80%;border:1px solid #ccc;}
-            .modalDialog{position:fixed;font-family:Arial,Helvetica,sans-serif;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.8);z-index:99999;opacity:0;-webkit-transition:opacity .4s ease-in;-moz-transition:opacity .4s ease-in;transition:opacity .4s ease-in;pointer-events:none}.modalDialog:target{opacity:1;pointer-events:auto}.modalDialog>.model-wrapper{width:400px;position:relative;margin:10% auto;padding:5px 20px 13px;border-radius:2px;background:#fff}.close{background:#fff;color:#000;line-height:25px;position:absolute;right:0;text-align:center;top:0;width:24px;text-decoration:none;font-weight:700;border-radius:0 5px 0 0;font-size:18px}.close:hover{background:#00d9ff}.modalDialog p{line-height:30px}
-            div#searchresultWrapper{max-height:320px;overflow:auto;}div#searchresultWrapper li{margin: 8px 0; list-style:none;}
+
+            .modalDialog{position:fixed; font-family:Arial,Helvetica,sans-serif;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.8);z-index:99999;opacity:0;-webkit-transition:opacity .4s ease-in;-moz-transition:opacity .4s ease-in;transition:opacity .4s ease-in;pointer-events:none}.modalDialog:target{opacity:1;pointer-events:auto}.modalDialog>.model-wrapper{width:400px;position:relative;margin:10% auto;padding:20px 40px 26px;border-radius:2px;background:#fff}.close{background:#fff;color:#000;line-height:25px;position:absolute;right:0;text-align:center;top:0;width:24px;text-decoration:none;font-weight:700;border-radius:0 5px 0 0;font-size:18px}.close:hover{background:#00d9ff}.modalDialog p{line-height:30px}
+            div#searchresultWrapper{max-height:320px;overflow:auto;}div#searchresultWrapper li{margin: 8px 0; list-style:none; padding: 50px;}
             li.folder:before, li.file:before{font: normal normal normal 14px/1 "FontAwesome";content:"\f016";margin-right:5px;}li.folder:before{content:"\f114";}
         </style>
     </head>
     <body>
     <div id="wrapper">
-    <div id="createNewItem" class="modalDialog"><div class="model-wrapper"><a href="#close" title="<?php echo fm_t('Close', $lang) ?>" class="close">X</a><h2><?php echo fm_t('Create New Item', $lang) ?></h2><p>
-                <label for="newfile"><?php echo fm_t('Item Type', $lang) ?> &nbsp; : </label><input type="radio" name="newfile" id="newfile" value="file"><?php echo fm_t('File', $lang) ?> <input type="radio" name="newfile" value="folder" checked> <?php echo fm_t('Folder', $lang) ?><br><label for="newfilename"><?php echo fm_t('Item Name', $lang) ?> : </label><input type="text" name="newfilename" id="newfilename" value=""><br><input type="submit" name="submit" class="group-btn" value="<?php echo fm_t('Create Now', $lang) ?>" onclick="newfolder('<?php echo fm_enc(FM_PATH) ?>');return false;"></p></div></div>
-    <div id="searchResult" class="modalDialog"><div class="model-wrapper"><a href="#close" title="<?php echo fm_t('Close', $lang) ?>" class="close">X</a>
-            <input type="search" name="search" value="" placeholder="<?php echo fm_t('Find a item in current folder...', $lang) ?>">
-            <h2><?php echo fm_t('Search Results', $lang) ?></h2>
+    <div id="createNewItem" class="modalDialog"><div class="model-wrapper"><a href="#close" title="<?php echo fm_t('Fermer', $lang) ?>" class="close">X</a><h2><?php echo fm_t('Crée', $lang) ?></h2><p>
+                <label for="newfile"><?php echo fm_t('Type', $lang) ?> &nbsp; : </label><input type="radio" name="newfile" id="newfile" value="file"><?php echo fm_t('Fichier', $lang) ?> <input type="radio" name="newfile" value="folder" checked> <?php echo fm_t('Dossier', $lang) ?><br><label for="newfilename"><?php echo fm_t('Nom', $lang) ?> : </label><input type="text" name="newfilename" id="newfilename" value=""><br><input type="submit" name="submit" class="btn btn-primary" value="<?php echo fm_t('Crée nouveau', $lang) ?>" onclick="newfolder('<?php echo fm_enc(FM_PATH) ?>');return false;"></p></div></div>
+    <div id="searchResult" class="modalDialog"><div class="model-wrapper"><a href="#close" title="<?php echo fm_t('Fermer', $lang) ?>" class="close">X</a>
+            <input type="search" name="search" value="" placeholder="<?php echo fm_t('Chercher un document dans le dossier...', $lang) ?>">
+            <h2><?php echo fm_t('Résultat de la recherche', $lang) ?></h2>
             <div id="searchresultWrapper"></div>
         </div></div>
     <?php
@@ -2126,10 +2134,10 @@ function fm_show_image($img)
         header('Pragma:');
     }
 
-    header('Last-Modified: ' . $modified_time, true, 200);
-    header('Expires: ' . $expires_time);
-    header('Content-Length: ' . $size);
-    header('Content-Type: image/png');
+    header('Date de modification: ' . $modified_time, true, 200);
+    header('Date de création: ' . $expires_time);
+    header('Taille du contenu: ' . $size);
+    header('Type de contenu: image/png');
     echo $image;
 
     exit;
@@ -2142,15 +2150,7 @@ function fm_show_image($img)
 function fm_get_images()
 {
     return array(
-        'favicon' => 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
-bWFnZVJlYWR5ccllPAAAAZVJREFUeNqkk79Lw0AUx1+uidTQim4Waxfpnl1BcHMR6uLkIF0cpYOI
-f4KbOFcRwbGTc0HQSVQQXCqlFIXgFkhIyvWS870LaaPYH9CDy8vdfb+fey930aSUMEvT6VHVzw8x
-rKUX3N3Hj/8M+cZ6GcOtBPl6KY5iAA7KJzfVWrfbhUKhALZtQ6myDf1+X5nsuzjLUmUOnpa+v5r1
-Z4ZDDfsLiwER45xDEATgOI6KntfDd091GidzC8vZ4vH1QQ09+4MSMAMWRREKPMhmsyr6voYmrnb2
-PKEizdEabUaeFCDKCCHAdV0wTVNFznMgpVqGlZ2cipzHGtKSZwCIZJgJwxB38KHT6Sjx21V75Jcn
-LXmGAKTRpGVZUx2dAqQzSEqw9kqwuGqONTufPrw37D8lQFxCvjgPXIixANLEGfwuQacMOC4kZz+q
-GdhJS550BjpRCdCbAJCMJRkMASEIg+4Bxz4JwAwDSEueAYDLIM+QrOk6GHiRxjXSkJY8KUCvdXZ6
-kbuvNx+mOcbN9taGBlpLAWf9nX8EGADoCfqkKWV/cgAAAABJRU5ErkJggg==',
+
         'sprites' => 'iVBORw0KGgoAAAANSUhEUgAAAYAAAAAgCAMAAAAscl/XAAAC/VBMVEUAAABUfn4KKipIcXFSeXsx
 VlZSUlNAZ2c4Xl4lSUkRDg7w8O/d3d3LhwAWFhYXODgMLCx8fHw9PT2TtdOOAACMXgE8lt+dmpq+
 fgABS3RUpN+VUycuh9IgeMJUe4C5dUI6meKkAQEKCgoMWp5qtusJmxSUPgKudAAXCghQMieMAgIU
